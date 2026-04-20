@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Heimdall — God's Eye for Satellite Intelligence</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#050508;--border:rgba(255,255,255,0.07);
+      --muted:rgba(255,255,255,0.35);--dim:rgba(255,255,255,0.14);
+      --mono:'Space Mono',monospace;--sans:'Inter',sans-serif;
+    }
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:#e0e0e8;font-family:var(--sans);overflow-x:hidden}
+    .mono{font-family:var(--mono)}
+
+    /* GRID BG */
+    .grid-bg{position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,0.016) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.016) 1px,transparent 1px);background-size:64px 64px;pointer-events:none;z-index:0}
+
+    /* PAGE SYSTEM */
+    .page{display:none;min-height:100vh}
+    .page.active{display:block}
+    #map-page.active{display:flex;flex-direction:column}
+
+    /* NAV */
+    nav{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 2.5rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(5,5,8,0.93);backdrop-filter:blur(14px);z-index:500}
+    .nav-logo{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px;letter-spacing:3px;color:#fff;text-decoration:none;cursor:pointer}
+    .logo-ring{width:28px;height:28px;border:1.5px solid rgba(255,255,255,0.28);border-radius:50%;display:flex;align-items:center;justify-content:center}
+    .logo-core{width:8px;height:8px;background:#fff;border-radius:50%}
+    .nav-links{display:flex;align-items:center;gap:2rem}
+    .nav-link{font-size:11px;letter-spacing:1.5px;color:rgba(255,255,255,0.45);text-decoration:none;text-transform:uppercase;transition:color .2s;cursor:pointer;background:none;border:none;font-family:var(--mono)}
+    .nav-link:hover,.nav-link.active{color:#fff}
+    .badge{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.14);font-size:8px;padding:2px 6px;border-radius:2px;letter-spacing:1px;color:rgba(255,255,255,0.5);margin-left:4px;vertical-align:middle}
+    .btn-outline{border:1px solid rgba(255,255,255,0.22);padding:8px 20px;font-size:10px;letter-spacing:1.5px;color:rgba(255,255,255,0.8);cursor:pointer;background:transparent;font-family:var(--mono);text-transform:uppercase;transition:all .2s}
+    .btn-outline:hover{background:rgba(255,255,255,0.07);color:#fff}
+    .btn-primary{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:2px;color:#050508;background:#fff;padding:14px 30px;cursor:pointer;transition:opacity .2s;border:none;text-decoration:none}
+    .btn-primary:hover{opacity:.85}
+
+    /* ═══════════════════════════════
+       HOME PAGE
+    ═══════════════════════════════ */
+    .live-dot{display:inline-block;width:6px;height:6px;background:#4ade80;border-radius:50%;margin-right:6px;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+    .orbit-deco{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,0.04);pointer-events:none;top:50%;left:65%;transform:translate(-50%,-50%)}
+
+    #home-hero{min-height:92vh;display:flex;flex-direction:column;justify-content:center;padding:5rem 2.5rem 2rem;position:relative;overflow:hidden}
+    .hero-eyebrow{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:rgba(255,255,255,0.22);text-transform:uppercase;margin-bottom:2.5rem}
+    h1.hero-title{font-size:clamp(3rem,6.5vw,5.8rem);font-weight:300;line-height:1.04;letter-spacing:-1.5px;color:#fff;margin-bottom:1.6rem;max-width:860px}
+    .hero-sub{font-size:14px;color:rgba(255,255,255,0.4);max-width:460px;line-height:1.85;margin-bottom:3rem}
+    .stats-bar{display:flex;margin-top:4.5rem;border-top:1px solid var(--border);flex-wrap:wrap;position:relative;z-index:1}
+    .stat{padding:1rem 2.5rem 1rem 0;font-family:var(--mono)}
+    .stat+.stat{border-left:1px solid var(--border);padding-left:2.5rem}
+    .stat-label{font-size:8px;letter-spacing:2.5px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-bottom:6px}
+    .stat-val{font-size:13px;color:rgba(255,255,255,0.75)}
+
+    /* home globe */
+    #home-globe-wrap{position:relative;height:520px;background:#000;border-top:1px solid var(--border);border-bottom:1px solid var(--border);overflow:hidden}
+    #home-globe-ui{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:14px 18px}
+    .globe-label{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:rgba(255,255,255,0.3)}
+    .globe-legend{display:flex;gap:14px}
+    .leg{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:8px;letter-spacing:1px;color:rgba(255,255,255,0.28)}
+    .leg-dot{width:6px;height:6px;border-radius:50%}
+    .globe-hint{font-family:var(--mono);font-size:8px;letter-spacing:1px;color:rgba(255,255,255,0.18)}
+
+    /* home sections */
+    .section-tag{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-bottom:2.5rem}
+    .section-title{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:300;color:#fff;line-height:1.12;margin-bottom:1.5rem}
+    .body-text{font-size:14px;color:rgba(255,255,255,0.42);line-height:1.95;margin-bottom:1.2rem}
+
+    #home-mission{display:grid;grid-template-columns:1fr 1fr;gap:5rem;padding:5rem 2.5rem;border-top:1px solid var(--border);align-items:start}
+    .feed-label{font-family:var(--mono);font-size:8px;letter-spacing:2.5px;color:rgba(255,255,255,0.18);margin-bottom:1rem;text-transform:uppercase}
+    .feed-item{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.18);padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;gap:1rem;align-items:center;animation:fadein .4s ease}
+    @keyframes fadein{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+    .feed-type{color:rgba(255,255,255,0.35);min-width:28px}
+    .feed-alt{color:rgba(255,255,255,0.3);margin-left:auto}
+
+    #home-team{padding:5rem 2.5rem;border-top:1px solid var(--border)}
+    .team-sub{font-family:var(--mono);font-size:9px;letter-spacing:2.5px;color:rgba(255,255,255,0.18);margin-bottom:3rem;text-transform:uppercase}
+    .team-grid{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--border)}
+    .team-card{padding:2rem 1.6rem;border-right:1px solid var(--border)}
+    .team-card:last-child{border-right:none}
+    .team-num{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.18);margin-bottom:1.5rem}
+    .team-name{font-size:15px;font-weight:500;color:#fff;margin-bottom:4px}
+    .team-role{font-size:12px;color:rgba(255,255,255,0.3);margin-bottom:1.5rem}
+    .team-links{display:flex;gap:12px}
+    .team-links a{font-family:var(--mono);font-size:8px;letter-spacing:1px;color:rgba(255,255,255,0.22);text-decoration:none;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.09);padding-bottom:2px;transition:color .2s,border-color .2s}
+    .team-links a:hover{color:rgba(255,255,255,0.65);border-color:rgba(255,255,255,0.3)}
+
+    #home-comms{padding:5rem 2.5rem;border-top:1px solid var(--border);background:rgba(255,255,255,0.01)}
+    .comms-inner{max-width:500px}
+    .comms-label{font-family:var(--mono);font-size:8px;letter-spacing:3px;color:rgba(255,255,255,0.18);margin-bottom:.5rem;text-transform:uppercase}
+    .comms-sub{font-size:13px;color:rgba(255,255,255,0.3);margin-bottom:2rem;line-height:1.8}
+    .email-row{display:flex;border:1px solid rgba(255,255,255,0.1)}
+    .email-input{flex:1;background:transparent;border:none;outline:none;padding:13px 16px;font-family:var(--mono);font-size:10px;color:#fff;letter-spacing:.5px}
+    .email-input::placeholder{color:rgba(255,255,255,0.14)}
+    .email-btn{background:transparent;border:none;border-left:1px solid rgba(255,255,255,0.1);padding:13px 18px;font-family:var(--mono);font-size:9px;letter-spacing:2px;color:rgba(255,255,255,0.4);cursor:pointer;transition:all .2s}
+    .email-btn:hover{background:rgba(255,255,255,0.05);color:#fff}
+
+    footer{border-top:1px solid var(--border);padding:1.8rem 2.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+    .footer-logo{font-family:var(--mono);font-size:10px;letter-spacing:2.5px;color:rgba(255,255,255,0.25)}
+    .footer-links{display:flex;gap:1.5rem;flex-wrap:wrap}
+    .footer-links a{font-size:11px;color:rgba(255,255,255,0.2);text-decoration:none;transition:color .2s}
+    .footer-links a:hover{color:rgba(255,255,255,0.55)}
+    .footer-copy{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.13);letter-spacing:1px}
+    .data-credit{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.13);padding:1rem 2.5rem;border-top:1px solid rgba(255,255,255,0.04);line-height:1.9}
+
+    /* ═══════════════════════════════
+       BIFROST PAGE
+    ═══════════════════════════════ */
+    .page-subnav{display:flex;gap:0;border-bottom:1px solid var(--border)}
+    .pnav-item{font-family:var(--mono);font-size:9px;letter-spacing:2px;padding:12px 20px;color:rgba(255,255,255,0.25);cursor:pointer;text-transform:uppercase;border-right:1px solid var(--border);transition:all .2s}
+    .pnav-item:hover,.pnav-item.active{color:#fff;background:rgba(255,255,255,0.03)}
+
+    #bifrost-hero{min-height:82vh;display:flex;flex-direction:column;justify-content:center;padding:5rem 2.5rem 3rem;position:relative;overflow:hidden;border-bottom:1px solid var(--border)}
+    .bif-eyebrow{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-bottom:1.5rem}
+    h1.bif-title{font-size:clamp(3.5rem,7vw,6.5rem);font-weight:300;line-height:1.0;letter-spacing:-2px;color:#fff;margin-bottom:1.2rem}
+    .bif-tagline{font-size:15px;color:rgba(255,255,255,0.35);margin-bottom:3rem;letter-spacing:.5px}
+
+    .preview-wrap{margin-top:3rem;border:1px solid var(--border);position:relative;background:rgba(255,255,255,0.01);overflow:hidden}
+    .preview-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);background:rgba(255,255,255,0.02)}
+    .wdot{width:8px;height:8px;border-radius:50%}
+    .preview-title{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:rgba(255,255,255,0.25);margin-left:auto}
+    .catalog-search{display:flex;border-bottom:1px solid var(--border)}
+    .cs-field{flex:1;padding:10px 16px;font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.2);border-right:1px solid var(--border)}
+    .cs-filter{padding:10px 16px;font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.18);border-right:1px solid var(--border);letter-spacing:1px}
+    table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px}
+    th{padding:10px 16px;text-align:left;letter-spacing:2px;color:rgba(255,255,255,0.2);border-bottom:1px solid var(--border);font-weight:400;white-space:nowrap}
+    td{padding:9px 16px;border-bottom:1px solid rgba(255,255,255,0.03);color:rgba(255,255,255,0.55);white-space:nowrap;transition:color .15s}
+    tr:hover td{background:rgba(255,255,255,0.025);color:rgba(255,255,255,0.8)}
+    .tag-pill{display:inline-block;font-size:8px;letter-spacing:1px;padding:2px 7px;border:1px solid;border-radius:2px}
+    .tag-active{color:#4ade80;border-color:rgba(74,222,128,0.3)}
+    .tag-dbo{color:#60a5fa;border-color:rgba(96,165,250,0.3)}
+    .tag-leo{color:#facc15;border-color:rgba(250,204,21,0.3)}
+    .tag-geo{color:#f87171;border-color:rgba(248,113,113,0.3)}
+    .record-count{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.2);padding:10px 16px;border-top:1px solid var(--border)}
+
+    #bifrost-features{padding:5rem 2.5rem;border-top:1px solid var(--border)}
+    .features-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0;border:1px solid var(--border)}
+    .feat{padding:2.5rem 2rem;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .feat:nth-child(even){border-right:none}
+    .feat:nth-child(3),.feat:nth-child(4){border-bottom:none}
+    .feat-num{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.15);margin-bottom:1.2rem}
+    .feat-title{font-size:13px;font-weight:500;letter-spacing:1px;color:#fff;margin-bottom:.8rem;text-transform:uppercase}
+    .feat-body{font-size:13px;color:rgba(255,255,255,0.38);line-height:1.85}
+    .demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:3rem}
+    .demo-panel{background:rgba(255,255,255,0.02);border:1px solid var(--border);overflow:hidden}
+    .dp-bar{padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+    .dp-label{font-family:var(--mono);font-size:8px;letter-spacing:2px;color:rgba(255,255,255,0.25)}
+    .dp-status{margin-left:auto;font-family:var(--mono);font-size:8px;padding:2px 8px;border:1px solid rgba(74,222,128,0.3);color:#4ade80}
+    .dp-body{padding:1.2rem}
+    .chat-msg{margin-bottom:1rem;font-size:11px;line-height:1.7}
+    .chat-you{font-family:var(--mono);color:rgba(255,255,255,0.4);font-size:9px;letter-spacing:1px;margin-bottom:3px}
+    .chat-bubble{background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:8px 12px;color:rgba(255,255,255,0.6)}
+    .chat-bubble.ai{border-color:rgba(96,165,250,0.2);color:rgba(255,255,255,0.7)}
+    .code-block{background:rgba(0,0,0,0.4);border:1px solid var(--border);padding:1rem;font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.45);line-height:1.9;overflow-x:auto}
+    .code-key{color:#60a5fa}.code-str{color:#4ade80}.code-num{color:#facc15}
+    .http-badge{display:inline-block;font-family:var(--mono);font-size:8px;padding:2px 8px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.25);color:#4ade80;letter-spacing:1px;margin-bottom:8px}
+    .progress-bar{height:2px;background:rgba(255,255,255,0.06);margin:1rem 0}
+    .progress-fill{height:100%;background:rgba(255,255,255,0.4);width:100%}
+    .export-row{display:flex;gap:8px;margin-top:.8rem}
+    .exp-btn{font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:6px 14px;border:1px solid var(--border);color:rgba(255,255,255,0.45);background:transparent;cursor:pointer;transition:all .2s}
+    .exp-btn:hover{background:rgba(255,255,255,0.06);color:#fff}
+    .exp-btn.active{border-color:rgba(255,255,255,0.4);color:#fff}
+
+    #bifrost-cta{padding:5rem 2.5rem;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+    .cta-num{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:rgba(255,255,255,0.15);margin-bottom:1rem}
+    .cta-title{font-size:clamp(2rem,4vw,3.5rem);font-weight:300;color:#fff;line-height:1.1;margin-bottom:1.5rem}
+    .cta-sub{font-size:14px;color:rgba(255,255,255,0.35);line-height:1.85;margin-bottom:2.5rem}
+    .contact-row{padding:1.5rem;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;transition:background .2s;cursor:pointer;margin-bottom:1rem}
+    .contact-row:hover{background:rgba(255,255,255,0.025)}
+    .cr-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:rgba(255,255,255,0.2);margin-bottom:4px;text-transform:uppercase}
+    .cr-val{font-size:13px;color:rgba(255,255,255,0.5)}
+    .cr-arrow{font-size:18px;color:rgba(255,255,255,0.2)}
+
+    /* ═══════════════════════════════
+       MAP PAGE
+    ═══════════════════════════════ */
+    #map-page{height:100vh;overflow:hidden}
+    #map-page nav{position:fixed;top:0;left:0;right:0;z-index:600;background:rgba(0,0,0,0.75)}
+    #map-canvas-wrap{position:fixed;inset:0;z-index:0;top:0}
+    #map-loading{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:700}
+    .map-load-logo{font-family:var(--mono);font-size:14px;letter-spacing:4px;color:rgba(255,255,255,0.4);margin-bottom:8px}
+    .map-load-line{width:240px;height:1px;background:rgba(255,255,255,0.08)}
+    .map-load-fill{height:100%;background:rgba(255,255,255,0.5);width:0%;transition:width .4s}
+    .map-load-text{font-size:9px;letter-spacing:3px;color:rgba(255,255,255,0.25);text-transform:uppercase}
+
+    #map-left{position:fixed;left:0;top:56px;bottom:0;width:270px;background:rgba(0,0,0,0.72);border-right:1px solid var(--border);z-index:100;display:flex;flex-direction:column;backdrop-filter:blur(8px);transition:transform .3s}
+    #map-left.closed{transform:translateX(-270px)}
+    .ml-header{padding:14px 14px 12px;border-bottom:1px solid var(--border)}
+    .ml-title{font-family:var(--mono);font-size:8px;letter-spacing:3px;color:rgba(255,255,255,0.25);text-transform:uppercase;margin-bottom:10px}
+    .search-box{display:flex;border:1px solid var(--border);background:rgba(255,255,255,0.03)}
+    .search-input{flex:1;background:transparent;border:none;outline:none;padding:8px 10px;font-family:var(--mono);font-size:9px;color:#fff;letter-spacing:.5px}
+    .search-input::placeholder{color:rgba(255,255,255,0.15)}
+    .filter-section{padding:12px 14px;border-bottom:1px solid var(--border)}
+    .fs-label{font-size:8px;letter-spacing:2.5px;color:rgba(255,255,255,0.18);margin-bottom:8px;font-family:var(--mono);text-transform:uppercase}
+    .filter-chips{display:flex;flex-wrap:wrap;gap:5px}
+    .chip{font-size:8px;letter-spacing:1px;padding:4px 9px;border:1px solid var(--border);color:rgba(255,255,255,0.3);cursor:pointer;transition:all .2s;text-transform:uppercase;font-family:var(--mono)}
+    .chip:hover{background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7)}
+    .chip.on{border-color:rgba(255,255,255,0.5);color:#fff;background:rgba(255,255,255,0.06)}
+    .chip-dot{display:inline-block;width:5px;height:5px;border-radius:50%;margin-right:4px;vertical-align:middle}
+    .sat-list{flex:1;overflow-y:auto}
+    .sat-list::-webkit-scrollbar{width:2px}
+    .sat-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1)}
+    .sat-item{padding:9px 14px;border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:9px}
+    .sat-item:hover,.sat-item.sel{background:rgba(255,255,255,0.04)}
+    .sat-color-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+    .sat-info-wrap{flex:1;min-width:0}
+    .sat-name-text{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sat-meta-text{font-family:var(--mono);font-size:8px;color:rgba(255,255,255,0.2);margin-top:1px}
+    .sat-km{font-family:var(--mono);font-size:8px;color:rgba(255,255,255,0.25);flex-shrink:0}
+    .ml-footer{padding:10px 14px;border-top:1px solid var(--border);font-family:var(--mono);font-size:8px;letter-spacing:2px;color:rgba(255,255,255,0.18);text-transform:uppercase}
+
+    #panel-toggle-btn{position:fixed;left:270px;top:50%;transform:translateY(-50%);z-index:101;background:rgba(0,0,0,0.7);border:1px solid var(--border);border-left:none;padding:10px 5px;cursor:pointer;color:rgba(255,255,255,0.3);font-size:12px;transition:all .2s;backdrop-filter:blur(8px);font-family:var(--mono)}
+    #panel-toggle-btn:hover{color:#fff}
+    #panel-toggle-btn.closed{left:0;border-left:1px solid var(--border);border-right:none}
+
+    #map-right{position:fixed;right:0;top:56px;bottom:0;width:250px;background:rgba(0,0,0,0.72);border-left:1px solid var(--border);z-index:100;backdrop-filter:blur(8px);display:none;flex-direction:column}
+    #map-right.open{display:flex}
+    .mr-header{padding:14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between}
+    .mr-name{font-family:var(--mono);font-size:12px;color:#fff;letter-spacing:1px;margin-bottom:3px}
+    .mr-cat{font-family:var(--mono);font-size:8px;color:rgba(255,255,255,0.3);letter-spacing:2px;text-transform:uppercase}
+    .mr-close{color:rgba(255,255,255,0.25);cursor:pointer;font-size:16px;padding:2px;transition:color .2s;font-family:var(--mono)}
+    .mr-close:hover{color:#fff}
+    .mr-body{padding:14px;flex:1;overflow-y:auto}
+    .mr-row{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+    .mr-key{font-family:var(--mono);font-size:8px;color:rgba(255,255,255,0.2);letter-spacing:1.5px;text-transform:uppercase}
+    .mr-val{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.6);text-align:right}
+    .mr-status{display:inline-block;font-size:8px;padding:2px 8px;border:1px solid rgba(74,222,128,0.3);color:#4ade80;letter-spacing:1px}
+    .track-btn{margin:12px 14px;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;padding:9px;border:1px solid var(--border);color:rgba(255,255,255,0.4);background:transparent;cursor:pointer;width:calc(100% - 28px);transition:all .2s;text-transform:uppercase}
+    .track-btn:hover{background:rgba(255,255,255,0.06);color:#fff}
+    .track-btn.on{border-color:rgba(74,222,128,0.4);color:#4ade80}
+
+    #map-hud{position:fixed;bottom:0;left:270px;right:0;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);padding:14px 18px;z-index:100;display:flex;align-items:flex-end;justify-content:space-between;transition:left .3s}
+    #map-hud.left-closed{left:0}
+    .hud-stats{display:flex;gap:2rem;flex-wrap:wrap}
+    .hud-stat{display:flex;flex-direction:column;gap:3px}
+    .hud-lbl{font-family:var(--mono);font-size:7px;letter-spacing:2.5px;color:rgba(255,255,255,0.18);text-transform:uppercase}
+    .hud-v{font-family:var(--mono);font-size:12px;color:rgba(255,255,255,0.7)}
+    .hud-hint{font-family:var(--mono);font-size:8px;letter-spacing:1px;color:rgba(255,255,255,0.18);text-align:right;line-height:1.9}
+    .speed-ctrl{display:flex;align-items:center;gap:6px}
+    .spd-btn{font-family:var(--mono);font-size:8px;letter-spacing:1px;padding:4px 9px;border:1px solid var(--border);color:rgba(255,255,255,0.3);background:transparent;cursor:pointer;transition:all .2s}
+    .spd-btn:hover,.spd-btn.active{color:#fff;border-color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.05)}
+
+    #map-tooltip{position:fixed;background:rgba(0,0,0,0.92);border:1px solid rgba(255,255,255,0.12);padding:8px 12px;font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.7);pointer-events:none;display:none;line-height:2;z-index:800}
+
+    /* RESPONSIVE */
+    @media(max-width:768px){
+      nav{padding:1rem 1.2rem}
+      .nav-links .nav-link:not(:last-child):not(:nth-last-child(2)){display:none}
+      #home-hero,#home-mission,#home-team,#home-comms,#bifrost-hero,#bifrost-features,#bifrost-cta{padding:3rem 1.2rem}
+      #home-mission{grid-template-columns:1fr;gap:2.5rem}
+      .team-grid{grid-template-columns:repeat(2,1fr)}
+      .team-card:nth-child(2){border-right:none}
+      .team-card:nth-child(3){border-right:1px solid var(--border)}
+      .features-grid,.demo-grid,#bifrost-cta{grid-template-columns:1fr}
+      .feat{border-right:none}
+      footer,.data-credit{padding:1.5rem 1.2rem}
+      #map-left{transform:translateX(-270px)}
+      #map-hud{left:0}
+      #panel-toggle-btn{left:0;border-left:1px solid var(--border);border-right:none}
+    }
+  </style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- ══════════════════════════════════════════════════
+     SHARED NAV
+══════════════════════════════════════════════════ -->
+<nav id="main-nav">
+  <div class="nav-logo" onclick="goTo('home')">
+    <div class="logo-ring"><div class="logo-core"></div></div>
+    HEIMDALL
+  </div>
+  <div class="nav-links">
+    <button class="nav-link" id="nav-bifrost" onclick="goTo('bifrost')">Bifrost <span class="badge">NEW</span></button>
+    <button class="nav-link" id="nav-mission" onclick="goTo('home');setTimeout(()=>document.getElementById('home-mission').scrollIntoView({behavior:'smooth'}),80)">Mission</button>
+    <button class="nav-link" id="nav-team" onclick="goTo('home');setTimeout(()=>document.getElementById('home-team').scrollIntoView({behavior:'smooth'}),80)">Team</button>
+    <button class="btn-outline" onclick="goTo('map')">Launch App</button>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════
+     HOME PAGE
+══════════════════════════════════════════════════ -->
+<div class="page active" id="home-page">
+
+  <!-- Hero -->
+  <section id="home-hero">
+    <div class="orbit-deco" style="width:640px;height:640px;margin:-320px 0 0 -320px"></div>
+    <div class="orbit-deco" style="width:420px;height:420px;margin:-210px 0 0 -210px;border-color:rgba(255,255,255,0.06)"></div>
+    <div class="orbit-deco" style="width:220px;height:220px;margin:-110px 0 0 -110px;border-color:rgba(255,255,255,0.08)"></div>
+    <div style="position:relative;z-index:1">
+      <div class="hero-eyebrow">HEIMDALL / ORBITAL INTELLIGENCE PLATFORM</div>
+      <h1 class="hero-title">God's Eye for<br>Satellite Intelligence.</h1>
+      <p class="hero-sub">Real-time orbital data for every public object in Earth's sphere of influence. Aggregated, processed, rendered at scale.</p>
+      <button class="btn-primary" onclick="goTo('map')">[ LAUNCH VISUALIZER → ]</button>
+    </div>
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-label">UTC</div><div class="stat-val mono" id="home-utc">—</div></div>
+      <div class="stat"><div class="stat-label">Objects Tracked</div><div class="stat-val mono">27,000+</div></div>
+      <div class="stat"><div class="stat-label">Status</div><div class="stat-val mono"><span class="live-dot"></span>OPERATIONAL</div></div>
+    </div>
+  </section>
+
+  <!-- Mini Globe -->
+  <div id="home-globe-wrap">
+    <div id="home-globe-ui">
+      <div class="globe-label">HEIMDALL / LIVE ORBITAL FEED</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-end">
+        <div class="globe-legend">
+          <div class="leg"><div class="leg-dot" style="background:#60a5fa"></div>STATIONS</div>
+          <div class="leg"><div class="leg-dot" style="background:#4ade80"></div>ACTIVE</div>
+          <div class="leg"><div class="leg-dot" style="background:#facc15"></div>WEATHER</div>
+          <div class="leg"><div class="leg-dot" style="background:#f87171"></div>DEBRIS</div>
+        </div>
+        <div class="globe-hint">DRAG · SCROLL · <span style="cursor:pointer;text-decoration:underline;color:rgba(255,255,255,0.35)" onclick="goTo('map')">OPEN FULL MAP →</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mission -->
+  <section id="home-mission">
+    <div>
+      <div class="section-tag">// MISSION</div>
+      <h2 class="section-title">Seeing Everything<br>in Orbit.</h2>
+      <p class="body-text">Space is getting crowded. From roughly 3,000 active satellites in 2020 to an estimated 100,000 by 2030, the need to understand the orbital environment has never been greater.</p>
+      <p class="body-text">Heimdall aggregates all major orbital data sources into a single, continuously updated 3D environment — from lone cubesats to mega-constellations, debris to crewed stations, LEO to GEO.</p>
+      <p class="body-text" style="color:rgba(255,255,255,0.28)">Solving space congestion is collaborative. Heimdall is our contribution.</p>
+    </div>
+    <div>
+      <div class="feed-label" style="padding-top:3rem">Orbital Feed / Live</div>
+      <div id="home-feed"></div>
+    </div>
+  </section>
+
+  <!-- Team -->
+  <section id="home-team">
+    <div class="section-tag">// TERMINUS</div>
+    <div class="team-sub">BUILT BY THE OBSESSED.</div>
+    <div class="team-grid">
+      <div class="team-card"><div class="team-num">01</div><div class="team-name">Bruce Li</div><div class="team-role">Co-Founder</div><div class="team-links"><a href="https://linkedin.com/in/ychengl1" target="_blank">LinkedIn</a><a href="https://github.com/ycheng11065" target="_blank">GitHub</a></div></div>
+      <div class="team-card"><div class="team-num">02</div><div class="team-name">Thomas Spina</div><div class="team-role">Co-Founder</div><div class="team-links"><a href="https://linkedin.com/in/thomas-spina" target="_blank">LinkedIn</a><a href="https://github.com/thomasspina" target="_blank">GitHub</a></div></div>
+      <div class="team-card"><div class="team-num">03</div><div class="team-name">Kelvin Chen</div><div class="team-role">Founding Engineer</div><div class="team-links"><a href="https://linkedin.com/in/kelv1n" target="_blank">LinkedIn</a><a href="https://github.com/KelvinnC" target="_blank">GitHub</a></div></div>
+      <div class="team-card"><div class="team-num">04</div><div class="team-name">Kevin Wong</div><div class="team-role">Founding Engineer</div><div class="team-links"><a href="https://linkedin.com/in/kevinwong711" target="_blank">LinkedIn</a><a href="https://github.com/KeveenWong" target="_blank">GitHub</a></div></div>
+    </div>
+  </section>
+
+  <!-- Comms -->
+  <section id="home-comms">
+    <div class="comms-inner">
+      <div class="comms-label">COMMS.AUTH</div>
+      <h2 class="section-title" style="font-size:1.5rem">Mission Updates</h2>
+      <p class="comms-sub">Receive release notes, roadmap milestones, and launch alerts before they go public.</p>
+      <div class="email-row">
+        <input class="email-input" type="email" placeholder="Email address"/>
+        <button class="email-btn">TRANSMIT →</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-logo">HEIMDALL</div>
+    <div class="footer-links">
+      <a href="https://linkedin.com/company/heimdall-space" target="_blank">LinkedIn</a>
+      <a href="https://x.com/heimdall_space" target="_blank">X</a>
+      <a href="#">Privacy</a><a href="#">Terms</a>
+      <a href="mailto:support@heimdallspace.com">Support</a>
+    </div>
+    <div class="footer-copy">© 2026 All rights reserved.</div>
+  </footer>
+  <div class="data-credit mono">Data: Space-Track.org · ISS Model: NASA 3D Resources · Catalog Data: J. McDowell, planet4589.org</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     BIFROST PAGE
+══════════════════════════════════════════════════ -->
+<div class="page" id="bifrost-page">
+
+  <div class="page-subnav">
+    <div class="pnav-item active" onclick="bfScroll('bifrost-hero',this)">01 Overview</div>
+    <div class="pnav-item" onclick="bfScroll('bifrost-features',this)">02 Capabilities</div>
+    <div class="pnav-item" onclick="bfScroll('bifrost-cta',this)">03 Access</div>
+  </div>
+
+  <!-- Hero -->
+  <section id="bifrost-hero">
+    <div style="position:relative;z-index:1;max-width:900px">
+      <div class="bif-eyebrow">BIFROST / SATELLITE CATALOG PLATFORM</div>
+      <h1 class="bif-title">BIFROST</h1>
+      <p class="bif-tagline">The bridge to fragmented satellite data.</p>
+      <a class="btn-primary" href="https://calendly.com/heimdall-space/30min" target="_blank">[ BOOK DEMO ]</a>
+    </div>
+
+    <div class="preview-wrap" style="position:relative;z-index:1">
+      <div class="preview-bar">
+        <div class="wdot" style="background:#f87171"></div>
+        <div class="wdot" style="background:#facc15"></div>
+        <div class="wdot" style="background:#4ade80"></div>
+        <div class="preview-title">BIFROST CATALOG — 15,666 of 68,260 RECORDS</div>
+      </div>
+      <div class="catalog-search">
+        <div class="cs-field">⌕ &nbsp;Search objects...</div>
+        <div class="cs-filter">COUNTRY ▾</div>
+        <div class="cs-filter">ORBIT ▾</div>
+        <div class="cs-filter" style="border-right:none">STATUS ▾</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>NAME</th><th>COUNTRY</th><th>OWNER</th><th>PROGRAM</th><th>MISSION</th><th>ORBIT</th><th>STATUS</th></tr></thead>
+          <tbody>
+            <tr><td>Landsat 9</td><td>US</td><td>USGS / NASA</td><td>Landsat</td><td>Land Imaging</td><td><span class="tag-pill tag-leo">LEO</span></td><td><span class="tag-pill tag-active">ACTIVE</span></td></tr>
+            <tr><td>Hubble Space Telescope</td><td>US</td><td>NASA / ESA</td><td>Great Observatories</td><td>Astronomy</td><td><span class="tag-pill tag-leo">LEO</span></td><td><span class="tag-pill tag-active">ACTIVE</span></td></tr>
+            <tr><td>James Webb Space Telescope</td><td>US</td><td>NASA / ESA / CSA</td><td>Great Observatories</td><td>Infrared Astronomy</td><td><span class="tag-pill tag-dbo">L2</span></td><td><span class="tag-pill tag-active">ACTIVE</span></td></tr>
+            <tr><td>NOAA-20</td><td>US</td><td>NOAA / NASA</td><td>JPSS</td><td>Weather</td><td><span class="tag-pill tag-leo">LEO</span></td><td><span class="tag-pill tag-active">ACTIVE</span></td></tr>
+            <tr><td>Sentinel-2A</td><td>EU</td><td>ESA / Copernicus</td><td>Copernicus</td><td>Earth Observation</td><td><span class="tag-pill tag-leo">LEO</span></td><td><span class="tag-pill tag-active">ACTIVE</span></td></tr>
+            <tr><td>Starlink D2C</td><td>US</td><td>SpaceX</td><td>Starlink</td><td>Broadband</td><td><span class="tag-pill tag-leo">LEO</span></td><td><span class="tag-pill tag-active">ACTIVE</span></td></tr>
+            <tr><td>GOES-18</td><td>US</td><td>NOAA / NASA</td><td>GOES-R</td><td>Weather</td><td><span class="tag-pill tag-geo">GEO</span></td><td><span class="tag-pill tag-active">ACTIVE</span></td></tr>
+            <tr><td>Aqua</td><td>US</td><td>NASA</td><td>EOS</td><td>Earth Science</td><td><span class="tag-pill tag-leo">LEO</span></td><td><span class="tag-pill tag-active">ACTIVE</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="record-count">Showing 1–8 of 68,260 objects · Last updated: <span id="bf-date" style="color:rgba(255,255,255,0.35)"></span></div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="bifrost-features">
+    <div class="section-tag">// 02 SYSTEM CAPABILITIES</div>
+    <h2 class="section-title">OPERATIONAL DEPTH</h2>
+    <div class="features-grid">
+      <div class="feat"><div class="feat-num">01</div><div class="feat-title">Catalog Intelligence</div><div class="feat-body">Instant access to registry data across 68,000+ objects updated daily. Sort and filter by every queryable dimension to locate required information with precision.</div></div>
+      <div class="feat"><div class="feat-num">02</div><div class="feat-title">AI Analyst</div><div class="feat-body">Query your catalog in natural language. Heimdall's AI interprets context beyond keywords to filter, summarize, and surface the data that matters.</div></div>
+      <div class="feat"><div class="feat-num">03</div><div class="feat-title">Export & Integration</div><div class="feat-body">Multi-format downloads feed directly into your analysis pipelines. Full schema view under a filtered scope, tailored to your needs.</div></div>
+      <div class="feat"><div class="feat-num">04</div><div class="feat-title">API Access</div><div class="feat-body">Endpoints for every catalog operation. Query, filter, and retrieve satellite data programmatically — integrating Bifrost into any pipeline.</div></div>
+    </div>
+    <div class="demo-grid">
+      <div class="demo-panel">
+        <div class="dp-bar"><div class="dp-label">HEIMDALL // AI ANALYST</div><div class="dp-status">ONLINE</div></div>
+        <div class="dp-body">
+          <div class="chat-msg"><div class="chat-you">YOU</div><div class="chat-bubble">Show me all NASA astronomy payloads in LEO and L2</div></div>
+          <div class="chat-msg"><div class="chat-you" style="color:rgba(96,165,250,0.6)">HEIMDALL</div><div class="chat-bubble ai">Found <b style="color:#fff">847 objects</b> matching — 12 in L2, 835 in LEO. Filtered by ACTIVE status and NASA ownership, sorted by launch date.</div></div>
+          <div class="chat-msg"><div class="chat-you">YOU</div><div class="chat-bubble">Export as CSV</div></div>
+          <div class="chat-msg"><div class="chat-you" style="color:rgba(96,165,250,0.6)">HEIMDALL</div>
+            <div class="chat-bubble ai">
+              <div style="font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.4);margin-bottom:6px">bifrost_export.csv · 847 records · 42 columns · 2.4 MB</div>
+              <div class="progress-bar"><div class="progress-fill"></div></div>
+              <span style="color:#4ade80;font-family:var(--mono);font-size:9px">✓ Export complete</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-panel">
+        <div class="dp-bar"><div class="dp-label">API ACCESS</div><div class="dp-status">v1</div></div>
+        <div class="dp-body">
+          <div class="http-badge">GET &nbsp;/v1/catalog/query &nbsp; 200 OK</div>
+          <div class="code-block">curl -X GET \<br>&nbsp;&nbsp;https://api.heimdall.space/v1/catalog/query \<br>&nbsp;&nbsp;-H <span class="code-str">"Authorization: Bearer hm_sk_..."</span> \<br>&nbsp;&nbsp;-d '{<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-key">"owner"</span>:<span class="code-str">"NASA"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-key">"orbit"</span>:[<span class="code-str">"LEO"</span>,<span class="code-str">"L2"</span>],<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-key">"limit"</span>:<span class="code-num">100</span><br>&nbsp;&nbsp;}'</div>
+          <div style="margin:1rem 0 .5rem;font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.18);letter-spacing:2px">// RESPONSE</div>
+          <div class="code-block">{<br>&nbsp;&nbsp;<span class="code-key">"count"</span>:<span class="code-num">847</span>,<br>&nbsp;&nbsp;<span class="code-key">"objects"</span>:[{<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-key">"name"</span>:<span class="code-str">"Hubble Space Telescope"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-key">"orbit"</span>:<span class="code-str">"LEO"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-key">"status"</span>:<span class="code-str">"ACTIVE"</span><br>&nbsp;&nbsp;},...] }</div>
+          <div class="export-row">
+            <button class="exp-btn active" onclick="setExp(this)">CSV</button>
+            <button class="exp-btn" onclick="setExp(this)">XLSX</button>
+            <button class="exp-btn" onclick="setExp(this)">JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="bifrost-cta">
+    <div>
+      <div class="cta-num">03 // ACCESS</div>
+      <h2 class="cta-title">Ready to explore the catalog?</h2>
+      <p class="cta-sub">Schedule a demo to see Bifrost in action — or reach out for enterprise inquiries.</p>
+      <a class="btn-primary" href="https://calendly.com/heimdall-space/30min" target="_blank">SCHEDULE DEMO →</a>
+    </div>
+    <div>
+      <div class="contact-row" onclick="window.location='mailto:support@heimdallspace.com'">
+        <div><div class="cr-label">Technical Support</div><div class="cr-val">support@heimdallspace.com</div></div>
+        <div class="cr-arrow">↗</div>
+      </div>
+      <div class="contact-row" onclick="window.location='mailto:business@heimdallspace.com'">
+        <div><div class="cr-label">Business Inquiries</div><div class="cr-val">business@heimdallspace.com</div></div>
+        <div class="cr-arrow">↗</div>
+      </div>
+      <div class="contact-row" onclick="window.open('https://linkedin.com/company/heimdall-space','_blank')">
+        <div><div class="cr-label">Follow</div><div class="cr-val">LinkedIn · X @heimdall_space</div></div>
+        <div class="cr-arrow">↗</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-logo">HEIMDALL</div>
+    <div class="footer-links"><a href="https://linkedin.com/company/heimdall-space" target="_blank">LinkedIn</a><a href="https://x.com/heimdall_space" target="_blank">X</a><a href="#">Privacy</a><a href="#">Terms</a></div>
+    <div class="footer-copy">© 2026 All rights reserved.</div>
+  </footer>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     MAP PAGE
+══════════════════════════════════════════════════ -->
+<div class="page" id="map-page">
+
+  <!-- Loading screen -->
+  <div id="map-loading">
+    <div class="map-load-logo">HEIMDALL</div>
+    <div class="map-load-line"><div class="map-load-fill" id="map-fill"></div></div>
+    <div class="map-load-text" id="map-load-txt">INITIALIZING ORBITAL MECHANICS</div>
+  </div>
+
+  <!-- Canvas -->
+  <div id="map-canvas-wrap"></div>
+
+  <!-- Left panel -->
+  <div id="map-left">
+    <div class="ml-header">
+      <div class="ml-title">Object Catalog</div>
+      <div class="search-box">
+        <input class="search-input" id="map-search" type="text" placeholder="Search satellites..."/>
+      </div>
+    </div>
+    <div class="filter-section">
+      <div class="fs-label">Filter by Type</div>
+      <div class="filter-chips">
+        <div class="chip on" data-cat="stations"><span class="chip-dot" style="background:#60a5fa"></span>Stations</div>
+        <div class="chip on" data-cat="starlink"><span class="chip-dot" style="background:#4ade80"></span>Starlink</div>
+        <div class="chip on" data-cat="weather"><span class="chip-dot" style="background:#facc15"></span>Weather</div>
+        <div class="chip on" data-cat="debris"><span class="chip-dot" style="background:#f87171"></span>Debris</div>
+        <div class="chip on" data-cat="active"><span class="chip-dot" style="background:#4ade80"></span>Active</div>
+      </div>
+    </div>
+    <div class="sat-list" id="map-sat-list"></div>
+    <div class="ml-footer"><span class="live-dot"></span><span id="map-vis-count">—</span> OBJECTS VISIBLE</div>
+  </div>
+
+  <!-- Panel toggle -->
+  <div id="panel-toggle-btn" onclick="toggleMapPanel()">‹</div>
+
+  <!-- Right info panel -->
+  <div id="map-right">
+    <div class="mr-header">
+      <div><div class="mr-name" id="mr-name">—</div><div class="mr-cat" id="mr-cat">—</div></div>
+      <div class="mr-close" onclick="closeRight()">✕</div>
+    </div>
+    <div class="mr-body" id="mr-body"></div>
+    <button class="track-btn" id="map-track-btn" onclick="toggleTrack()">TRACK ORBIT</button>
+  </div>
+
+  <!-- Tooltip -->
+  <div id="map-tooltip"></div>
+
+  <!-- HUD -->
+  <div id="map-hud">
+    <div class="hud-stats">
+      <div class="hud-stat"><div class="hud-lbl">UTC</div><div class="hud-v" id="map-utc">—</div></div>
+      <div class="hud-stat"><div class="hud-lbl">Objects</div><div class="hud-v" id="map-count">—</div></div>
+      <div class="hud-stat"><div class="hud-lbl">Status</div><div class="hud-v"><span class="live-dot"></span><span id="map-status">LOADING</span></div></div>
+      <div class="hud-stat">
+        <div class="hud-lbl">Time Scale</div>
+        <div class="speed-ctrl">
+          <button class="spd-btn active" data-spd="1">1×</button>
+          <button class="spd-btn" data-spd="10">10×</button>
+          <button class="spd-btn" data-spd="60">60×</button>
+          <button class="spd-btn" data-spd="600">600×</button>
+        </div>
+      </div>
+    </div>
+    <div class="hud-hint">DRAG ROTATE · SCROLL ZOOM · CLICK OBJECT</div>
+  </div>
+</div>
+
+<!-- THREE.JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ═══════════════════════════════════════
+// ROUTER
+// ═══════════════════════════════════════
+const pages = ['home-page','bifrost-page','map-page'];
+let currentPage = 'home-page';
+let mapInitialized = false;
+let homeGlobeInitialized = false;
+
+function goTo(name) {
+  const id = name + '-page';
+  pages.forEach(p => {
+    const el = document.getElementById(p);
+    el.classList.toggle('active', p === id);
+  });
+
+  // Nav highlight
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  if (name === 'bifrost') document.getElementById('nav-bifrost').classList.add('active');
+
+  // Map nav visibility
+  const nav = document.getElementById('main-nav');
+  nav.style.display = name === 'map' ? 'none' : 'flex';
+
+  // Fix body scroll
+  document.body.style.overflow = name === 'map' ? 'hidden' : '';
+
+  currentPage = id;
+  window.scrollTo(0, 0);
+
+  if (name === 'map' && !mapInitialized) { mapInitialized = true; initMap(); }
+  if (name === 'home' && !homeGlobeInitialized) { homeGlobeInitialized = true; setTimeout(initHomeGlobe, 100); }
+  if (name === 'bifrost') {
+    const d = new Date();
+    const el = document.getElementById('bf-date');
+    if (el) el.textContent = d.toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'});
+  }
+}
+
+function bfScroll(id, el) {
+  document.querySelectorAll('.pnav-item').forEach(x => x.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(id).scrollIntoView({behavior:'smooth'});
+}
+function setExp(btn) {
+  btn.closest('.export-row').querySelectorAll('.exp-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ═══════════════════════════════════════
+// SHARED CLOCK
+// ═══════════════════════════════════════
+function pad(v){return String(v).padStart(2,'0');}
+function tick(){
+  const n=new Date();
+  const t=pad(n.getUTCHours())+':'+pad(n.getUTCMinutes())+':'+pad(n.getUTCSeconds());
+  ['home-utc','map-utc'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t;});
+}
+tick(); setInterval(tick,1000);
+
+// ═══════════════════════════════════════
+// ORBITAL FEED (home)
+// ═══════════════════════════════════════
+const FEED_NAMES=['NOAA-21','STARLINK-4521','ISS','TERRA','AQUA','COSMOS-2551','DEBRIS-7823','SENTINEL-6','GOES-18','IRIDIUM-106','METOP-C','LANDSAT-9','WORLDVIEW-3','CRYOSAT-2','JASON-3'];
+const FEED_TYPES=['SAT','DEB','STN','COM','WEA','OBS'];
+function addFeedItem(){
+  const el=document.getElementById('home-feed'); if(!el) return;
+  const name=FEED_NAMES[Math.floor(Math.random()*FEED_NAMES.length)];
+  const type=FEED_TYPES[Math.floor(Math.random()*FEED_TYPES.length)];
+  const alt=Math.floor(350+Math.random()*35400);
+  const div=document.createElement('div'); div.className='feed-item';
+  div.innerHTML=`<span class="feed-type">${type}</span><span>${name}</span><span class="feed-alt">${alt.toLocaleString()} KM</span>`;
+  el.prepend(div); if(el.children.length>9) el.removeChild(el.lastChild);
+}
+for(let i=0;i<7;i++) addFeedItem();
+setInterval(addFeedItem,1800);
+
+// ═══════════════════════════════════════
+// SATELLITE DATA GENERATOR (shared)
+// ═══════════════════════════════════════
+const RAD=Math.PI/180, EARTH_R=1.0, KM=1/6371;
+const CATS={stations:{color:0x60a5fa,size:0.025},starlink:{color:0x4ade80,size:0.006},weather:{color:0xfacc15,size:0.012},debris:{color:0xf87171,size:0.004},active:{color:0x4ade80,size:0.006}};
+
+function genSats(){
+  const s=[];
+  [{name:'ISS (ZARYA)',inc:51.6,raan:10,M:0,alt:408,period:92.5},
+   {name:'CSS (TIANHE)',inc:41.5,raan:120,M:1.1,alt:390,period:91.5},
+   {name:'HST (Hubble)',inc:28.5,raan:200,M:2.2,alt:537,period:95.4}
+  ].forEach(o=>s.push({...o,inc:o.inc*RAD,raan:o.raan*RAD,alt:o.alt*KM+EARTH_R,cat:'stations'}));
+  for(let i=0;i<140;i++) s.push({name:'STARLINK-'+(1000+i),inc:53*RAD,raan:(Math.floor(i/10)*36)*RAD,M:(i%10*36)*RAD,alt:550*KM+EARTH_R,period:95.5,cat:'starlink'});
+  for(let i=0;i<40;i++) s.push({name:'ONEWEB-'+i,inc:87.9*RAD,raan:(i*9)*RAD,M:(i*13)*RAD,alt:1200*KM+EARTH_R,period:109,cat:'starlink'});
+  [['NOAA-15',98.7,833,102,0],['NOAA-18',99,854,102,36],['NOAA-19',98.7,870,102,72],
+   ['METOP-A',98.7,817,101,108],['METOP-B',98.7,817,101,144],['METOP-C',98.7,817,101,180],
+   ['GOES-18',0.1,35786,1436,0],['GOES-16',0.1,35786,1436,45],['HIMAWARI-9',0.1,35786,1436,90]
+  ].forEach(([name,inc,alt,period,raan])=>s.push({name,inc:inc*RAD,raan:raan*RAD,M:Math.random()*2*Math.PI,alt:alt*KM+EARTH_R,period,cat:'weather'}));
+  for(let i=0;i<100;i++) s.push({name:'DEBRIS-'+Math.floor(10000+Math.random()*89999),inc:(20+Math.random()*130)*RAD,raan:Math.random()*2*Math.PI,M:Math.random()*2*Math.PI,alt:(300+Math.random()*1400)*KM+EARTH_R,period:90+Math.random()*65,cat:'debris'});
+  const anames=['TERRA','AQUA','LANDSAT-9','SENTINEL-2A','SENTINEL-6','CRYOSAT-2','JASON-3','CALIPSO','CLOUDSAT','SUOMI-NPP'];
+  for(let i=0;i<180;i++) s.push({name:i<anames.length?anames[i]:'SAT-'+Math.floor(10000+Math.random()*89999),inc:Math.random()*140*RAD,raan:Math.random()*2*Math.PI,M:Math.random()*2*Math.PI,alt:(400+Math.random()*35000)*KM+EARTH_R,period:90+Math.random()*1400,cat:'active'});
+  return s;
+}
+
+function getSyntheticPos(sat,T){
+  const period=sat.period*60, M=sat.M+(2*Math.PI/period)*T, r=sat.alt;
+  const xp=r*Math.cos(M), yp=r*Math.sin(M);
+  const ci=Math.cos(sat.inc), si=Math.sin(sat.inc), cr=Math.cos(sat.raan), sr=Math.sin(sat.raan);
+  const xw=xp*cr-yp*sr*ci, yw=xp*si*sr+yp*si*cr, zw=yp*si;
+  const GMST=(280.46+360.985*(T/86400))*RAD;
+  const cg=Math.cos(-GMST), sg=Math.sin(-GMST);
+  return{x:cg*xw-sg*zw, y:yw, z:sg*xw+cg*zw};
+}
+
+const SAT_DATA = genSats(); // generate once, share between globes
+
+// ═══════════════════════════════════════
+// HOME MINI GLOBE
+// ═══════════════════════════════════════
+let homeRenderer,homeScene,homeCamera,homeEarth,homeMeshes=[];
+let homeDrag=false,homeLastX=0,homeLastY=0,homeRotX=0.3,homeRotY=0,homeZoom=3.6;
+
+function initHomeGlobe(){
+  const wrap=document.getElementById('home-globe-wrap');
+  const W=wrap.clientWidth, H=wrap.clientHeight;
+  homeRenderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
+  homeRenderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  homeRenderer.setSize(W,H); homeRenderer.setClearColor(0x000000,1);
+  homeRenderer.domElement.style.cssText='position:absolute;inset:0;width:100%;height:100%';
+  wrap.insertBefore(homeRenderer.domElement,wrap.firstChild);
+
+  homeScene=new THREE.Scene(); homeCamera=new THREE.PerspectiveCamera(45,W/H,0.001,500);
+  homeCamera.position.set(0,0,3.6);
+
+  // Stars
+  const sp=new Float32Array(6000); for(let i=0;i<6000;i++) sp[i]=(Math.random()-.5)*200;
+  const sg=new THREE.BufferGeometry(); sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+  homeScene.add(new THREE.Points(sg,new THREE.PointsMaterial({color:0xffffff,size:0.07,transparent:true,opacity:.45})));
+
+  homeEarth=new THREE.Mesh(new THREE.SphereGeometry(EARTH_R,72,72),new THREE.MeshPhongMaterial({color:0x0b1a30,emissive:0x040c18,shininess:25}));
+  homeScene.add(homeEarth);
+  homeScene.add(new THREE.Mesh(new THREE.SphereGeometry(EARTH_R*1.016,64,64),new THREE.MeshPhongMaterial({color:0x1a4a88,transparent:true,opacity:.10,side:THREE.FrontSide})));
+
+  const gm=new THREE.LineBasicMaterial({color:0x1a3560,transparent:true,opacity:.22});
+  for(let lat=-60;lat<=60;lat+=30){const pts=[],la=lat*RAD,r=EARTH_R*1.001;for(let lg=0;lg<=360;lg+=4){const lo=lg*RAD;pts.push(r*Math.cos(la)*Math.cos(lo),r*Math.sin(la),r*Math.cos(la)*Math.sin(lo));}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pts),3));homeScene.add(new THREE.Line(g,gm));}
+  for(let lg=0;lg<360;lg+=30){const pts=[],lo=lg*RAD,r=EARTH_R*1.001;for(let lat=-88;lat<=88;lat+=4){const la=lat*RAD;pts.push(r*Math.cos(la)*Math.cos(lo),r*Math.sin(la),r*Math.cos(la)*Math.sin(lo));}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pts),3));homeScene.add(new THREE.Line(g,gm));}
+
+  homeScene.add(new THREE.AmbientLight(0x22334d,2.2));
+  const sun=new THREE.DirectionalLight(0xffffff,1.4); sun.position.set(6,3,5); homeScene.add(sun);
+
+  const matC={};
+  SAT_DATA.slice(0,300).forEach(s=>{
+    const cat=s.cat||'active',sz=(CATS[cat]||CATS.active).size*0.8;
+    const key=cat; if(!matC[key]) matC[key]=new THREE.MeshBasicMaterial({color:(CATS[cat]||CATS.active).color});
+    const m=new THREE.Mesh(new THREE.SphereGeometry(sz,4,4),matC[key]);
+    m.userData.sat=s; homeScene.add(m); homeMeshes.push(m);
+  });
+
+  const cvs=homeRenderer.domElement;
+  cvs.addEventListener('mousedown',e=>{homeDrag=true;homeLastX=e.clientX;homeLastY=e.clientY;});
+  window.addEventListener('mouseup',()=>homeDrag=false);
+  window.addEventListener('mousemove',e=>{if(!homeDrag||currentPage!=='home-page')return;homeRotY+=(e.clientX-homeLastX)*.005;homeRotX+=(e.clientY-homeLastY)*.005;homeRotX=Math.max(-1.4,Math.min(1.4,homeRotX));homeLastX=e.clientX;homeLastY=e.clientY;});
+  cvs.addEventListener('wheel',e=>{homeZoom=Math.max(1.8,Math.min(7,homeZoom+e.deltaY*.003));e.preventDefault();},{passive:false});
+
+  const homeStart=Date.now();
+  function homeAnimate(){
+    if(currentPage!=='home-page'){requestAnimationFrame(homeAnimate);return;}
+    requestAnimationFrame(homeAnimate);
+    const T=(Date.now()-homeStart)/1000;
+    homeMeshes.forEach(m=>{const p=getSyntheticPos(m.userData.sat,T);if(p)m.position.set(p.x,p.y,p.z);});
+    homeEarth.rotation.y=T*.01;
+    homeCamera.position.x=homeZoom*Math.sin(homeRotY)*Math.cos(homeRotX);
+    homeCamera.position.y=homeZoom*Math.sin(homeRotX);
+    homeCamera.position.z=homeZoom*Math.cos(homeRotY)*Math.cos(homeRotX);
+    homeCamera.lookAt(0,0,0);
+    homeRenderer.render(homeScene,homeCamera);
+  }
+  homeAnimate();
+  window.addEventListener('resize',()=>{if(!homeRenderer)return;const w=wrap.clientWidth,h=wrap.clientHeight;homeCamera.aspect=w/h;homeCamera.updateProjectionMatrix();homeRenderer.setSize(w,h);});
+}
+
+// Init home globe on load
+setTimeout(initHomeGlobe, 200);
+
+// ═══════════════════════════════════════
+// MAP PAGE
+// ═══════════════════════════════════════
+let mapRenderer,mapScene,mapCamera,mapEarth,mapMeshes=[],mapSats=[];
+let mapDrag=false,mapLX=0,mapLY=0,mapRotX=0.3,mapRotY=0,mapZoom=4,mapTargetZoom=4;
+let mapTimeScale=1,mapElapsed=0,mapLastRAF=0;
+let trackedSat=null,selectedSat=null,orbitLine=null;
+let mapPanelOpen=true;
+let visibleCats=new Set(['stations','starlink','weather','debris','active']);
+
+function setMapLoad(p,t){document.getElementById('map-fill').style.width=p+'%';document.getElementById('map-load-txt').textContent=t;}
+
+function initMap(){
+  const wrap=document.getElementById('map-canvas-wrap');
+  const W=window.innerWidth,H=window.innerHeight;
+  mapRenderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
+  mapRenderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  mapRenderer.setSize(W,H); mapRenderer.setClearColor(0x000000,1);
+  wrap.appendChild(mapRenderer.domElement);
+  Object.assign(mapRenderer.domElement.style,{position:'fixed',inset:'0',zIndex:'1'});
+
+  mapScene=new THREE.Scene(); mapCamera=new THREE.PerspectiveCamera(45,W/H,0.001,2000);
+  mapCamera.position.set(0,0,4);
+
+  // Stars
+  const sp=new Float32Array(12000); for(let i=0;i<12000;i++) sp[i]=(Math.random()-.5)*400;
+  const sg=new THREE.BufferGeometry(); sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+  mapScene.add(new THREE.Points(sg,new THREE.PointsMaterial({color:0xffffff,size:0.06,transparent:true,opacity:.5})));
+
+  mapEarth=new THREE.Mesh(new THREE.SphereGeometry(EARTH_R,96,96),new THREE.MeshPhongMaterial({color:0x0b1c35,emissive:0x040d1a,shininess:20}));
+  mapScene.add(mapEarth);
+  mapScene.add(new THREE.Mesh(new THREE.SphereGeometry(EARTH_R*1.018,64,64),new THREE.MeshPhongMaterial({color:0x1a5090,transparent:true,opacity:.10,side:THREE.FrontSide})));
+
+  const gm=new THREE.LineBasicMaterial({color:0x1a3d70,transparent:true,opacity:.22});
+  const em=new THREE.LineBasicMaterial({color:0x2255aa,transparent:true,opacity:.35});
+  for(let lat=-80;lat<=80;lat+=20){const pts=[],la=lat*RAD,r=EARTH_R*1.001;for(let lg=0;lg<=360;lg+=3){const lo=lg*RAD;pts.push(r*Math.cos(la)*Math.cos(lo),r*Math.sin(la),r*Math.cos(la)*Math.sin(lo));}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pts),3));mapScene.add(new THREE.Line(g,lat===0?em:gm));}
+  for(let lg=0;lg<360;lg+=20){const pts=[],lo=lg*RAD,r=EARTH_R*1.001;for(let lat=-88;lat<=88;lat+=3){const la=lat*RAD;pts.push(r*Math.cos(la)*Math.cos(lo),r*Math.sin(la),r*Math.cos(la)*Math.sin(lo));}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pts),3));mapScene.add(new THREE.Line(g,gm));}
+
+  mapScene.add(new THREE.AmbientLight(0x223355,2.5));
+  const sun=new THREE.DirectionalLight(0xfffaee,1.6);sun.position.set(8,3,5);mapScene.add(sun);
+
+  buildMapMeshes();
+
+  // Controls
+  const cvs=mapRenderer.domElement;
+  cvs.addEventListener('mousedown',e=>{mapDrag=true;mapLX=e.clientX;mapLY=e.clientY;cvs.style.cursor='grabbing';});
+  window.addEventListener('mouseup',()=>{mapDrag=false;cvs.style.cursor='grab';});
+  window.addEventListener('mousemove',e=>{
+    if(mapDrag){mapRotY+=(e.clientX-mapLX)*.004;mapRotX+=(e.clientY-mapLY)*.004;mapRotX=Math.max(-1.5,Math.min(1.5,mapRotX));mapLX=e.clientX;mapLY=e.clientY;if(trackedSat)trackedSat=null;}
+    handleMapHover(e);
+  });
+  cvs.addEventListener('wheel',e=>{mapTargetZoom=Math.max(1.3,Math.min(12,mapTargetZoom+e.deltaY*.003));e.preventDefault();},{passive:false});
+  cvs.addEventListener('click',e=>{
+    const rect=cvs.getBoundingClientRect();
+    const mouse=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
+    const ray=new THREE.Raycaster(); ray.setFromCamera(mouse,mapCamera);
+    const hits=ray.intersectObjects(mapMeshes.filter(m=>m.visible));
+    if(hits.length) selectSat(hits[0].object.userData.sat);
+  });
+  cvs.style.cursor='grab';
+
+  // Filter chips
+  document.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click',()=>{
+      const cat=chip.dataset.cat;
+      chip.classList.toggle('on');
+      chip.classList.contains('on')?visibleCats.add(cat):visibleCats.delete(cat);
+      applyMapVisibility(); updateMapList();
+    });
+  });
+
+  // Search
+  document.getElementById('map-search').addEventListener('input',updateMapList);
+
+  // Speed buttons
+  document.querySelectorAll('.spd-btn').forEach(btn=>{
+    btn.addEventListener('click',function(){
+      document.querySelectorAll('.spd-btn').forEach(b=>b.classList.remove('active'));
+      this.classList.add('active'); mapTimeScale=parseInt(this.dataset.spd);
+    });
+  });
+
+  // Resize
+  window.addEventListener('resize',()=>{
+    if(!mapRenderer)return;
+    const w=window.innerWidth,h=window.innerHeight;
+    mapCamera.aspect=w/h;mapCamera.updateProjectionMatrix();mapRenderer.setSize(w,h);
+  });
+
+  setMapLoad(30,'BUILDING EARTH MODEL');
+  setTimeout(()=>{
+    setMapLoad(70,'POPULATING CATALOG');
+    setTimeout(()=>{
+      setMapLoad(100,'ORBITAL FEED ACTIVE');
+      setTimeout(()=>{
+        document.getElementById('map-loading').style.display='none';
+        document.getElementById('map-status').textContent='OPERATIONAL';
+        mapLastRAF=performance.now();
+        mapAnimate();
+      },300);
+    },400);
+  },400);
+}
+
+function buildMapMeshes(){
+  mapMeshes.forEach(m=>mapScene.remove(m)); mapMeshes=[];
+  mapSats=SAT_DATA;
+  const mc={};
+  mapSats.forEach(s=>{
+    const cat=s.cat||'active',sz=(CATS[cat]||CATS.active).size;
+    if(!mc[cat]) mc[cat]=new THREE.MeshBasicMaterial({color:(CATS[cat]||CATS.active).color});
+    const m=new THREE.Mesh(new THREE.SphereGeometry(sz,4,4),mc[cat]);
+    m.userData.sat=s; mapScene.add(m); mapMeshes.push(m);
+  });
+  document.getElementById('map-count').textContent=mapSats.length.toLocaleString();
+  document.getElementById('map-vis-count').textContent=mapSats.length.toLocaleString();
+  updateMapList();
+}
+
+function applyMapVisibility(){
+  mapMeshes.forEach(m=>{const cat=m.userData.sat.cat||'active';m.visible=visibleCats.has(cat);});
+  const v=mapMeshes.filter(m=>m.visible).length;
+  document.getElementById('map-vis-count').textContent=v.toLocaleString();
+  document.getElementById('map-count').textContent=v.toLocaleString();
+}
+
+function updateMapList(){
+  const list=document.getElementById('map-sat-list');
+  const q=(document.getElementById('map-search')?.value||'').toLowerCase();
+  const shown=mapSats.filter(s=>{
+    const cat=s.cat||'active';
+    return visibleCats.has(cat)&&(!q||s.name.toLowerCase().includes(q));
+  }).slice(0,150);
+  list.innerHTML='';
+  shown.forEach(s=>{
+    const cat=s.cat||'active',color='#'+((CATS[cat]||CATS.active).color).toString(16).padStart(6,'0');
+    const div=document.createElement('div'); div.className='sat-item';
+    if(selectedSat===s) div.classList.add('sel');
+    div.innerHTML=`<div class="sat-color-dot" style="background:${color}"></div><div class="sat-info-wrap"><div class="sat-name-text">${s.name}</div><div class="sat-meta-text">${cat.toUpperCase()}</div></div><div class="sat-km">${Math.round((s.alt-EARTH_R)/KM).toLocaleString()} km</div>`;
+    div.onclick=()=>selectSat(s);
+    list.appendChild(div);
+  });
+}
+
+function selectSat(s){
+  selectedSat=s;
+  document.querySelectorAll('.sat-item').forEach(el=>el.classList.remove('sel'));
+  document.getElementById('map-right').classList.add('open');
+  document.getElementById('mr-name').textContent=s.name;
+  document.getElementById('mr-cat').textContent=(s.cat||'active').toUpperCase();
+  const alt=Math.round((s.alt-EARTH_R)/KM);
+  document.getElementById('mr-body').innerHTML=`
+    <div class="mr-row"><div class="mr-key">Status</div><div class="mr-val"><span class="mr-status">${s.cat==='debris'?'DEBRIS':'ACTIVE'}</span></div></div>
+    <div class="mr-row"><div class="mr-key">Category</div><div class="mr-val">${(s.cat||'active').toUpperCase()}</div></div>
+    <div class="mr-row"><div class="mr-key">Altitude</div><div class="mr-val">${alt.toLocaleString()} km</div></div>
+    <div class="mr-row"><div class="mr-key">Inclination</div><div class="mr-val">${(s.inc/RAD).toFixed(1)}°</div></div>
+    <div class="mr-row"><div class="mr-key">Period</div><div class="mr-val">${s.period.toFixed(1)} min</div></div>
+    <div class="mr-row"><div class="mr-key">Orbit Type</div><div class="mr-val">${alt<2000?'LEO':alt<35786?'MEO':'GEO'}</div></div>
+    <div class="mr-row"><div class="mr-key">Velocity</div><div class="mr-val">~${Math.sqrt(398600/(6371+alt)).toFixed(2)} km/s</div></div>`;
+  drawOrbit(s);
+  const tb=document.getElementById('map-track-btn');
+  if(trackedSat===s){tb.classList.add('on');tb.textContent='TRACKING ✓';}
+  else{tb.classList.remove('on');tb.textContent='TRACK ORBIT';}
+  updateMapList();
+}
+
+function drawOrbit(s){
+  if(orbitLine){mapScene.remove(orbitLine);orbitLine=null;}
+  const pts=[];
+  for(let i=0;i<=360;i++){const t=mapElapsed+(i/360)*s.period*60;const p=getSyntheticPos(s,t);if(p)pts.push(new THREE.Vector3(p.x,p.y,p.z));}
+  const g=new THREE.BufferGeometry().setFromPoints(pts);
+  const color=(CATS[s.cat||'active']||CATS.active).color;
+  orbitLine=new THREE.Line(g,new THREE.LineBasicMaterial({color,transparent:true,opacity:.4}));
+  mapScene.add(orbitLine);
+}
+
+function closeRight(){
+  document.getElementById('map-right').classList.remove('open');
+  if(orbitLine){mapScene.remove(orbitLine);orbitLine=null;}
+  trackedSat=null; selectedSat=null; updateMapList();
+}
+function toggleTrack(){
+  if(!selectedSat)return;
+  const btn=document.getElementById('map-track-btn');
+  if(trackedSat===selectedSat){trackedSat=null;btn.textContent='TRACK ORBIT';btn.classList.remove('on');}
+  else{trackedSat=selectedSat;btn.textContent='TRACKING ✓';btn.classList.add('on');}
+}
+
+function toggleMapPanel(){
+  mapPanelOpen=!mapPanelOpen;
+  const panel=document.getElementById('map-left');
+  const btn=document.getElementById('panel-toggle-btn');
+  const hud=document.getElementById('map-hud');
+  panel.classList.toggle('closed',!mapPanelOpen);
+  btn.classList.toggle('closed',!mapPanelOpen);
+  btn.style.left=mapPanelOpen?'270px':'0';
+  btn.textContent=mapPanelOpen?'‹':'›';
+  hud.classList.toggle('left-closed',!mapPanelOpen);
+}
+
+const mapRay=new THREE.Raycaster();
+const mapMouse=new THREE.Vector2();
+const mapTip=document.getElementById('map-tooltip');
+function handleMapHover(e){
+  if(mapDrag){mapTip.style.display='none';return;}
+  const cvs=mapRenderer?.domElement; if(!cvs)return;
+  const rect=cvs.getBoundingClientRect();
+  mapMouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+  mapMouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+  mapRay.setFromCamera(mapMouse,mapCamera);
+  const hits=mapRay.intersectObjects(mapMeshes.filter(m=>m.visible));
+  if(hits.length){
+    const s=hits[0].object.userData.sat;
+    mapTip.style.display='block';
+    mapTip.style.left=(e.clientX+16)+'px';
+    mapTip.style.top=(e.clientY-20)+'px';
+    mapTip.innerHTML=`<b style="color:#fff;letter-spacing:2px">${s.name}</b><br>ALT: ${Math.round((s.alt-EARTH_R)/KM).toLocaleString()} KM · ${(s.cat||'SAT').toUpperCase()}`;
+    cvs.style.cursor='pointer';
+  } else {
+    mapTip.style.display='none';
+    cvs.style.cursor='grab';
+  }
+}
+
+function mapAnimate(){
+  requestAnimationFrame(mapAnimate);
+  if(currentPage!=='map-page')return;
+  const now=performance.now();
+  const dt=(now-mapLastRAF)/1000; mapLastRAF=now;
+  mapElapsed+=dt*mapTimeScale;
+  mapZoom+=(mapTargetZoom-mapZoom)*.08;
+  mapMeshes.forEach(m=>{const p=getSyntheticPos(m.userData.sat,mapElapsed);if(p)m.position.set(p.x,p.y,p.z);});
+  mapEarth.rotation.y=mapElapsed*.01;
+  if(trackedSat){
+    const m=mapMeshes.find(x=>x.userData.sat===trackedSat);
+    if(m){const off=m.position.clone().normalize().multiplyScalar(mapZoom);mapCamera.position.lerp(off,.03);mapCamera.lookAt(m.position.clone().multiplyScalar(.3));}
+  } else {
+    mapCamera.position.x=mapZoom*Math.sin(mapRotY)*Math.cos(mapRotX);
+    mapCamera.position.y=mapZoom*Math.sin(mapRotX);
+    mapCamera.position.z=mapZoom*Math.cos(mapRotY)*Math.cos(mapRotX);
+    mapCamera.lookAt(0,0,0);
+  }
+  mapRenderer.render(mapScene,mapCamera);
+}
+</script>
+</body>
+</html>
